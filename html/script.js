@@ -46,13 +46,14 @@ function playPagerBeep() {
   } catch (e) {}
 }
 
-// ── Tab switching ──────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
+// ── Tab switching (hardware buttons) ───────────
+document.querySelectorAll('.hw-btn[data-tab]').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.hw-btn[data-tab]').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+    hideAllOverlays();
   });
 });
 
@@ -124,9 +125,9 @@ function openPager(data) {
   renderInbox();
 
   // Reset to contacts tab
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.hw-btn[data-tab]').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
-  document.querySelector('[data-tab="contacts"]').classList.add('active');
+  document.querySelector('.hw-btn[data-tab="contacts"]').classList.add('active');
   document.getElementById('tab-contacts').classList.remove('hidden');
 
   hideAllOverlays();

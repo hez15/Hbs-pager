@@ -11,86 +11,95 @@
   <!-- ── Main pager UI ───────────────────────── -->
   <div id="pager-ui" class="hidden">
     <div class="backdrop"></div>
+
     <div class="pager-device">
+      <!-- Antenna -->
+      <div class="antenna"></div>
 
-      <div class="device-label">HBS PAGER</div>
+      <!-- Top strip: LED + brand + number -->
+      <div class="device-top-strip">
+        <div class="led-dot"></div>
+        <span class="device-brand">HBS</span>
+        <span id="my-number">#----</span>
+      </div>
 
+      <!-- LCD screen -->
       <div class="pager-screen">
+        <div class="screen-inner">
 
-        <div class="screen-header">
-          <span class="screen-title">PAGER</span>
-          <span id="my-number">#----</span>
-          <button class="close-btn" id="close-btn">&#10005;</button>
-        </div>
-
-        <div class="tab-bar">
-          <button class="tab-btn active" data-tab="contacts">CONTACTS</button>
-          <button class="tab-btn"        data-tab="inbox">INBOX</button>
-          <button class="tab-btn"        data-tab="dial">DIAL</button>
-        </div>
-
-        <div class="tab-content">
-
-          <!-- Contacts -->
+          <!-- Contacts pane -->
           <div id="tab-contacts" class="tab-pane">
+            <div class="screen-label">CONTACTS</div>
             <div id="contacts-list" class="scroll-list"></div>
-            <button class="action-btn" id="add-contact-btn">+ ADD CONTACT</button>
+            <button class="lcd-btn" id="add-contact-btn">+ ADD CONTACT</button>
           </div>
 
-          <!-- Inbox -->
+          <!-- Inbox pane -->
           <div id="tab-inbox" class="tab-pane hidden">
+            <div class="screen-label">INBOX</div>
             <div id="inbox-list" class="scroll-list"></div>
           </div>
 
-          <!-- Dial -->
+          <!-- Dial pane -->
           <div id="tab-dial" class="tab-pane hidden">
+            <div class="screen-label">DIAL</div>
             <div class="dial-form">
-              <label>PAGER NUMBER</label>
-              <input id="dial-number" type="text" inputmode="numeric" maxlength="4" placeholder="e.g. 1234" />
+              <label>NUMBER</label>
+              <input id="dial-number" type="text" inputmode="numeric" maxlength="4" placeholder="1234" />
               <label>MESSAGE</label>
-              <textarea id="dial-message" maxlength="100" placeholder="Type your message..."></textarea>
-              <button class="action-btn" id="dial-send-btn">SEND PAGE</button>
+              <textarea id="dial-message" maxlength="100" placeholder="Type message..."></textarea>
+              <button class="lcd-btn" id="dial-send-btn">SEND PAGE</button>
+            </div>
+          </div>
+
+          <!-- Add Contact overlay -->
+          <div id="add-contact-overlay" class="screen-overlay hidden">
+            <div class="screen-label">ADD CONTACT</div>
+            <label>NAME</label>
+            <input id="new-contact-name"   type="text"  maxlength="24"  placeholder="e.g. Dispatch" />
+            <label>NUMBER</label>
+            <input id="new-contact-number" type="text"  inputmode="numeric" maxlength="4" placeholder="1234" />
+            <div class="overlay-actions">
+              <button class="lcd-btn-cancel" id="cancel-contact-btn">CANCEL</button>
+              <button class="lcd-btn"        id="save-contact-btn">SAVE</button>
+            </div>
+          </div>
+
+          <!-- Send overlay -->
+          <div id="send-overlay" class="screen-overlay hidden">
+            <div class="screen-label" id="send-overlay-title">PAGE #----</div>
+            <label>MESSAGE</label>
+            <textarea id="send-message" maxlength="100" placeholder="Type message..."></textarea>
+            <div class="overlay-actions">
+              <button class="lcd-btn-cancel" id="cancel-send-btn">CANCEL</button>
+              <button class="lcd-btn"        id="confirm-send-btn">SEND</button>
+            </div>
+          </div>
+
+          <!-- Inbox action overlay -->
+          <div id="inbox-action-overlay" class="screen-overlay hidden">
+            <div class="screen-label" id="inbox-action-title">FROM #----</div>
+            <div id="inbox-action-message" class="inbox-preview"></div>
+            <div class="overlay-actions col">
+              <button class="lcd-btn"        id="inbox-reply-btn">REPLY</button>
+              <button class="lcd-btn"        id="inbox-save-btn">SAVE CONTACT</button>
+              <button class="lcd-btn-cancel" id="inbox-back-btn">BACK</button>
             </div>
           </div>
 
         </div>
       </div>
 
-      <!-- Add Contact overlay -->
-      <div id="add-contact-overlay" class="form-overlay hidden">
-        <div class="form-title">ADD CONTACT</div>
-        <label>NAME</label>
-        <input id="new-contact-name"   type="text"  maxlength="24" placeholder="e.g. Dispatch" />
-        <label>PAGER NUMBER</label>
-        <input id="new-contact-number" type="text"  inputmode="numeric" maxlength="4" placeholder="e.g. 5678" />
-        <div class="form-actions">
-          <button class="cancel-btn" id="cancel-contact-btn">CANCEL</button>
-          <button class="action-btn" id="save-contact-btn">SAVE</button>
-        </div>
+      <!-- Hardware navigation buttons -->
+      <div class="hw-buttons">
+        <button class="hw-btn active" data-tab="contacts">CONTACTS</button>
+        <button class="hw-btn"        data-tab="inbox">INBOX</button>
+        <button class="hw-btn"        data-tab="dial">DIAL</button>
+        <button class="hw-btn hw-close" id="close-btn">&#10005;</button>
       </div>
 
-      <!-- Send page overlay (quick-dial from contact) -->
-      <div id="send-overlay" class="form-overlay hidden">
-        <div class="form-title" id="send-overlay-title">PAGE #----</div>
-        <label>MESSAGE</label>
-        <textarea id="send-message" maxlength="100" placeholder="Type your message..."></textarea>
-        <div class="form-actions">
-          <button class="cancel-btn" id="cancel-send-btn">CANCEL</button>
-          <button class="action-btn" id="confirm-send-btn">SEND</button>
-        </div>
-      </div>
-
-      <!-- Inbox action overlay -->
-      <div id="inbox-action-overlay" class="form-overlay hidden">
-        <div class="form-title" id="inbox-action-title">FROM #----</div>
-        <div id="inbox-action-message" class="inbox-preview"></div>
-        <div class="form-actions col">
-          <button class="action-btn" id="inbox-reply-btn">REPLY</button>
-          <button class="action-btn" id="inbox-save-btn">SAVE TO CONTACTS</button>
-          <button class="cancel-btn" id="inbox-back-btn">BACK</button>
-        </div>
-      </div>
-
+      <!-- Speaker grille -->
+      <div class="speaker-grille"></div>
     </div>
   </div>
 
