@@ -57,7 +57,63 @@ RegisterNetEvent('hbs-pager:server:registerPager', function()
     if not number then return end
 
     pagerRegistry[number] = src
-    TriggerClientEvent('hbs-pager:client:pagerReady', src, number)
+
+    -- Also pass saved contacts so the client can populate the contacts list
+    local slots = exports.ox_inventory:Search(src, 'slots', 'pager')
+    local savedContacts = (slots and slots[1] and slots[1].metadata and slots[1].metadata.contacts) or {}
+
+    TriggerClientEvent('hbs-pager:client:pagerReady', src, number, savedContacts)
+end)
+
+-- ──────────────────────────────────────────────
+-- Contacts
+-- ──────────────────────────────────────────────
+
+local function getItemAndMeta(src)
+    local slots = exports.ox_inventory:Search(src, 'slots', 'pager')
+    if not slots or #slots == 0 then return nil, nil end
+    local item = slots[1]
+    return item, item.metadata or {}
+end
+
+RegisterNetEvent('hbs-pager:server:saveContact', function(name, number)
+    local src = source
+    if type(name) ~= 'string' or type(number) ~= 'number' then return end
+
+    name   = string.sub(name, 1, 24)
+    number = math.floor(number)
+
+    local item, metadata = getItemAndMeta(src)
+    if not item then return end
+
+    metadata.contacts = metadata.contacts or {}
+
+    -- Prevent duplicate numbers
+    for _, c in ipairs(metadata.contacts) do
+        if c.number == number then
+            TriggerClientEvent('hbs-pager:client:notify', src, 'That number is already in your contacts.', 'error')
+            return
+        end
+    end
+
+    table.insert(metadata.contacts, { name = name, number = number })
+    exports.ox_inventory:SetMetadata(src, item.slot, metadata)
+    TriggerClientEvent('hbs-pager:client:contactsUpdated', src, metadata.contacts)
+end)
+
+RegisterNetEvent('hbs-pager:server:deleteContact', function(index)
+    local src = source
+    if type(index) ~= 'number' then return end
+
+    local item, metadata = getItemAndMeta(src)
+    if not item then return end
+
+    metadata.contacts = metadata.contacts or {}
+    if not metadata.contacts[index] then return end
+
+    table.remove(metadata.contacts, index)
+    exports.ox_inventory:SetMetadata(src, item.slot, metadata)
+    TriggerClientEvent('hbs-pager:client:contactsUpdated', src, metadata.contacts)
 end)
 
 -- ──────────────────────────────────────────────
