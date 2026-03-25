@@ -58,11 +58,12 @@ RegisterNetEvent('hbs-pager:server:registerPager', function()
 
     pagerRegistry[number] = src
 
-    -- Also pass saved contacts so the client can populate the contacts list
-    local slots = exports.ox_inventory:Search(src, 'slots', 'pager')
-    local savedContacts = (slots and slots[1] and slots[1].metadata and slots[1].metadata.contacts) or {}
+    local slots    = exports.ox_inventory:Search(src, 'slots', 'pager')
+    local meta     = (slots and slots[1] and slots[1].metadata) or {}
+    local savedContacts = meta.contacts or {}
+    local savedInbox    = meta.inbox    or {}
 
-    TriggerClientEvent('hbs-pager:client:pagerReady', src, number, savedContacts)
+    TriggerClientEvent('hbs-pager:client:pagerReady', src, number, savedContacts, savedInbox)
 end)
 
 -- ──────────────────────────────────────────────
@@ -74,6 +75,22 @@ local function getItemAndMeta(src)
     if not slots or #slots == 0 then return nil, nil end
     local item = slots[1]
     return item, item.metadata or {}
+end
+
+-- Appends a received message to the pager item's metadata so it persists
+-- with the physical item (survives relogs and item transfers).
+local function saveMessageToMeta(src, senderNumber, message, timeStr)
+    local item, metadata = getItemAndMeta(src)
+    if not item then return end
+
+    metadata.inbox = metadata.inbox or {}
+    table.insert(metadata.inbox, 1, { sender = senderNumber, message = message, time = timeStr })
+
+    while #metadata.inbox > Config.MaxInboxSize do
+        table.remove(metadata.inbox)
+    end
+
+    exports.ox_inventory:SetMetadata(src, item.slot, metadata)
 end
 
 RegisterNetEvent('hbs-pager:server:saveContact', function(name, number)
@@ -123,8 +140,9 @@ end)
 RegisterNetEvent('hbs-pager:server:sendPage', function(recipientNumber, message, senderNumber)
     local src = source
 
-    -- Basic validation
-    if type(recipientNumber) ~= 'number' or type(message) ~= 'string' then return end
+    -- Basic validation — all three must be numbers; message must be a non-empty string
+    if type(recipientNumber) ~= 'number' or math.type(math.tointeger(recipientNumber)) ~= 'integer' then return end
+    if type(message) ~= 'string' or message == '' then return end
     if type(senderNumber) ~= 'number' then return end
 
     -- Sanitise message length
@@ -141,7 +159,9 @@ RegisterNetEvent('hbs-pager:server:sendPage', function(recipientNumber, message,
         return
     end
 
-    TriggerClientEvent('hbs-pager:client:receivePage', recipientSrc, senderNumber, message)
+    local timeStr = os.date('%H:%M')
+    saveMessageToMeta(recipientSrc, senderNumber, message, timeStr)
+    TriggerClientEvent('hbs-pager:client:receivePage', recipientSrc, senderNumber, message, timeStr)
     TriggerClientEvent('hbs-pager:client:notify', src, 'Page sent to #' .. recipientNumber .. '.', 'success')
 end)
 

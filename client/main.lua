@@ -12,11 +12,6 @@ local function notify(msg, ntype)
     lib.notify({ title = 'Pager', description = msg, type = ntype or 'inform' })
 end
 
--- os.date is not available client-side in FiveM; use game clock
-local function getTime()
-    return ('%02d:%02d'):format(GetClockHours(), GetClockMinutes())
-end
-
 -- ──────────────────────────────────────────────
 -- NUI open / close
 -- ──────────────────────────────────────────────
@@ -77,10 +72,11 @@ AddEventHandler('hbs-pager:client:openPager', function()
     TriggerServerEvent('hbs-pager:server:registerPager')
 end)
 
--- Server confirms number + passes saved contacts
-RegisterNetEvent('hbs-pager:client:pagerReady', function(pagerNumber, savedContacts)
+-- Server confirms number, contacts, and persistent inbox loaded from item metadata
+RegisterNetEvent('hbs-pager:client:pagerReady', function(pagerNumber, savedContacts, savedInbox)
     myPagerNumber = pagerNumber
     contacts      = savedContacts or {}
+    inbox         = savedInbox    or {}
     openPagerUI()
 end)
 
@@ -91,22 +87,17 @@ RegisterNetEvent('hbs-pager:client:contactsUpdated', function(updatedContacts)
     notify('Contacts updated.', 'success')
 end)
 
--- Incoming page from another player
-RegisterNetEvent('hbs-pager:client:receivePage', function(senderNumber, message)
-    local entry = {
-        sender  = senderNumber,
-        message = message,
-        time    = getTime(),
-    }
+-- Incoming page — timestamp comes from server so it matches what was saved to metadata
+RegisterNetEvent('hbs-pager:client:receivePage', function(senderNumber, message, timeStr)
+    local entry = { sender = senderNumber, message = message, time = timeStr }
     table.insert(inbox, 1, entry)
     while #inbox > Config.MaxInboxSize do table.remove(inbox) end
 
-    -- Show NUI popup (non-blocking — no focus change)
     SendNUIMessage({
         action   = 'showPage',
         sender   = senderNumber,
         message  = message,
-        time     = entry.time,
+        time     = timeStr,
         duration = Config.NotificationDuration,
     })
 end)

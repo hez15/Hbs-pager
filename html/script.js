@@ -46,6 +46,13 @@ function playPagerBeep() {
   } catch (e) {}
 }
 
+// ── Numeric-only enforcement on pager number inputs ──
+document.querySelectorAll('input[inputmode="numeric"]').forEach(input => {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '');
+  });
+});
+
 // ── Tab switching (hardware buttons) ───────────
 document.querySelectorAll('.hw-btn[data-tab]').forEach(btn => {
   btn.addEventListener('click', () => {
