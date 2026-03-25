@@ -107,10 +107,17 @@ local function openPagerMenu()
 end
 
 -- ──────────────────────────────────────────────
--- Events — from server
+-- Events
 -- ──────────────────────────────────────────────
 
-RegisterNetEvent('hbs-pager:client:openPager', function(pagerNumber)
+-- Fired by ox_inventory when the item is used (client.event in item definition)
+-- itemData = { slot, name, label, count, metadata, ... }
+AddEventHandler('hbs-pager:client:openPager', function(itemData)
+    TriggerServerEvent('hbs-pager:server:registerPager', itemData.slot)
+end)
+
+-- Server confirms the assigned/existing pager number
+RegisterNetEvent('hbs-pager:client:pagerReady', function(pagerNumber)
     myPagerNumber = pagerNumber
     openPagerMenu()
 end)

@@ -21,31 +21,31 @@ local function generatePagerNumber()
 end
 
 -- ──────────────────────────────────────────────
--- ox_inventory item export (replaces registerHook)
--- Item definition must have: server = { export = 'hbs-pager.usePager' }
+-- Register / assign pager number
+-- Called by client when item is used.
+-- Item definition must have: client = { event = 'hbs-pager:client:openPager' }
 -- ──────────────────────────────────────────────
 
-exports('usePager', function(payload, cb)
-    local src      = payload.source
-    local metadata = payload.item.metadata or {}
+RegisterNetEvent('hbs-pager:server:registerPager', function(slot)
+    local src  = source
+    -- Read metadata directly from inventory — never trust client-sent data
+    local item = exports.ox_inventory:GetSlotWithItem(src, 'pager')
 
-    -- Assign pager number on first use; store in item metadata
+    if not item then return end
+
+    local metadata = item.metadata or {}
+
     if not metadata.pagerNumber then
         metadata.pagerNumber = generatePagerNumber()
-        exports.ox_inventory:SetMetadata(src, payload.item.slot, metadata)
+        exports.ox_inventory:SetMetadata(src, item.slot, metadata)
     else
-        -- Re-register in case the player re-logged
         if not usedNumbers[metadata.pagerNumber] then
             usedNumbers[metadata.pagerNumber] = true
         end
     end
 
-    -- Always refresh the live registry with current source
     pagerRegistry[metadata.pagerNumber] = src
-
-    TriggerClientEvent('hbs-pager:client:openPager', src, metadata.pagerNumber)
-
-    cb(true) -- required: signals ox_inventory the use action completed
+    TriggerClientEvent('hbs-pager:client:pagerReady', src, metadata.pagerNumber)
 end)
 
 -- ──────────────────────────────────────────────
