@@ -7,9 +7,97 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- ── Main pager UI ───────────────────────── -->
+  <div id="pager-ui" class="hidden">
+    <div class="backdrop"></div>
+    <div class="pager-device">
+
+      <div class="device-label">HBS PAGER</div>
+
+      <div class="pager-screen">
+
+        <div class="screen-header">
+          <span class="screen-title">PAGER</span>
+          <span id="my-number">#----</span>
+          <button class="close-btn" id="close-btn">&#10005;</button>
+        </div>
+
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="contacts">CONTACTS</button>
+          <button class="tab-btn"        data-tab="inbox">INBOX</button>
+          <button class="tab-btn"        data-tab="dial">DIAL</button>
+        </div>
+
+        <div class="tab-content">
+
+          <!-- Contacts -->
+          <div id="tab-contacts" class="tab-pane">
+            <div id="contacts-list" class="scroll-list"></div>
+            <button class="action-btn" id="add-contact-btn">+ ADD CONTACT</button>
+          </div>
+
+          <!-- Inbox -->
+          <div id="tab-inbox" class="tab-pane hidden">
+            <div id="inbox-list" class="scroll-list"></div>
+          </div>
+
+          <!-- Dial -->
+          <div id="tab-dial" class="tab-pane hidden">
+            <div class="dial-form">
+              <label>PAGER NUMBER</label>
+              <input id="dial-number" type="text" inputmode="numeric" maxlength="4" placeholder="e.g. 1234" />
+              <label>MESSAGE</label>
+              <textarea id="dial-message" maxlength="100" placeholder="Type your message..."></textarea>
+              <button class="action-btn" id="dial-send-btn">SEND PAGE</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Add Contact overlay -->
+      <div id="add-contact-overlay" class="form-overlay hidden">
+        <div class="form-title">ADD CONTACT</div>
+        <label>NAME</label>
+        <input id="new-contact-name"   type="text"  maxlength="24" placeholder="e.g. Dispatch" />
+        <label>PAGER NUMBER</label>
+        <input id="new-contact-number" type="text"  inputmode="numeric" maxlength="4" placeholder="e.g. 5678" />
+        <div class="form-actions">
+          <button class="cancel-btn" id="cancel-contact-btn">CANCEL</button>
+          <button class="action-btn" id="save-contact-btn">SAVE</button>
+        </div>
+      </div>
+
+      <!-- Send page overlay (quick-dial from contact) -->
+      <div id="send-overlay" class="form-overlay hidden">
+        <div class="form-title" id="send-overlay-title">PAGE #----</div>
+        <label>MESSAGE</label>
+        <textarea id="send-message" maxlength="100" placeholder="Type your message..."></textarea>
+        <div class="form-actions">
+          <button class="cancel-btn" id="cancel-send-btn">CANCEL</button>
+          <button class="action-btn" id="confirm-send-btn">SEND</button>
+        </div>
+      </div>
+
+      <!-- Inbox action overlay -->
+      <div id="inbox-action-overlay" class="form-overlay hidden">
+        <div class="form-title" id="inbox-action-title">FROM #----</div>
+        <div id="inbox-action-message" class="inbox-preview"></div>
+        <div class="form-actions col">
+          <button class="action-btn" id="inbox-reply-btn">REPLY</button>
+          <button class="action-btn" id="inbox-save-btn">SAVE TO CONTACTS</button>
+          <button class="cancel-btn" id="inbox-back-btn">BACK</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Incoming page popup ─────────────────── -->
   <div id="pager-popup" class="hidden">
     <div class="pager-header">
-      <span class="pager-icon">&#128223;</span>
+      <span>&#128223;</span>
       <span id="pager-from">PAGE FROM #0000</span>
     </div>
     <div class="pager-body">

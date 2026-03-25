@@ -1,7 +1,7 @@
 -- hbs-pager — client/main.lua
 
 local inbox         = {} -- { sender, message, time }
-local contacts      = {} -- { name, number } — loaded from item metadata via server
+local contacts      = {} -- { name, number }
 local myPagerNumber = nil
 
 -- ──────────────────────────────────────────────
@@ -12,300 +12,101 @@ local function notify(msg, ntype)
     lib.notify({ title = 'Pager', description = msg, type = ntype or 'inform' })
 end
 
--- ──────────────────────────────────────────────
--- UI — Send message dialog (shared by manual dial + contacts)
--- ──────────────────────────────────────────────
-
-local function sendMessageTo(recipientNumber, recipientName)
-    local title = recipientName
-        and ('Page  %s  (#%s)'):format(recipientName, recipientNumber)
-        or  ('Send Page')
-
-    local input = lib.inputDialog(title, {
-        {
-            type        = 'input',
-            label       = 'Message',
-            required    = true,
-            max         = Config.MaxMessageLength,
-            placeholder = 'Type your message...',
-        },
-    })
-
-    if not input or not input[1] then return end
-    TriggerServerEvent('hbs-pager:server:sendPage', recipientNumber, input[1], myPagerNumber)
+-- os.date is not available client-side in FiveM; use game clock
+local function getTime()
+    return ('%02d:%02d'):format(GetClockHours(), GetClockMinutes())
 end
 
 -- ──────────────────────────────────────────────
--- UI — Manual dial
+-- NUI open / close
 -- ──────────────────────────────────────────────
 
-local function sendPageDialog()
-    local input = lib.inputDialog('Send Page', {
-        {
-            type        = 'number',
-            label       = 'Pager Number',
-            required    = true,
-            placeholder = ('e.g. %s'):format(myPagerNumber),
-        },
-        {
-            type        = 'input',
-            label       = 'Message',
-            required    = true,
-            max         = Config.MaxMessageLength,
-            placeholder = 'Type your message...',
-        },
+local function openPagerUI()
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action      = 'openPager',
+        pagerNumber = myPagerNumber,
+        contacts    = contacts,
+        inbox       = inbox,
     })
+end
 
-    if not input then return end
-
-    local recipientNumber = tonumber(input[1])
-    if not recipientNumber then
-        notify('Invalid pager number.', 'error')
-        return
-    end
-
-    TriggerServerEvent('hbs-pager:server:sendPage', recipientNumber, input[2], myPagerNumber)
+local function closePagerUI()
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'closePager' })
 end
 
 -- ──────────────────────────────────────────────
--- UI — Contacts
+-- NUI callbacks (JS → Lua)
 -- ──────────────────────────────────────────────
 
-local openContactsMenu  -- forward declare so inbox can reference it
+RegisterNUICallback('closePager', function(_, cb)
+    SetNuiFocus(false, false)
+    cb('ok')
+end)
 
-local function openContactMenu(contact, index)
-    lib.registerContext({
-        id      = 'hbs_pager_contact',
-        title   = ('%s  —  #%s'):format(contact.name, contact.number),
-        menu    = 'hbs_pager_contacts',
-        options = {
-            {
-                title    = 'Send Page',
-                icon     = 'paper-plane',
-                onSelect = function()
-                    sendMessageTo(contact.number, contact.name)
-                end,
-            },
-            {
-                title    = 'Delete Contact',
-                icon     = 'trash',
-                onSelect = function()
-                    TriggerServerEvent('hbs-pager:server:deleteContact', index)
-                end,
-            },
-        },
-    })
-    lib.showContext('hbs_pager_contact')
-end
+RegisterNUICallback('sendPage', function(data, cb)
+    local number  = tonumber(data.number)
+    local message = tostring(data.message or '')
+    if not number or message == '' then cb('invalid') return end
+    TriggerServerEvent('hbs-pager:server:sendPage', number, message, myPagerNumber)
+    cb('ok')
+end)
 
-openContactsMenu = function()
-    local options = {}
+RegisterNUICallback('saveContact', function(data, cb)
+    local name   = tostring(data.name   or '')
+    local number = tonumber(data.number)
+    if name == '' or not number then cb('invalid') return end
+    TriggerServerEvent('hbs-pager:server:saveContact', name, number)
+    cb('ok')
+end)
 
-    -- Saved contacts
-    if #contacts == 0 then
-        options[#options + 1] = {
-            title    = 'No contacts saved yet.',
-            readOnly = true,
-            icon     = 'address-book',
-        }
-    else
-        for i, c in ipairs(contacts) do
-            local idx = i
-            options[#options + 1] = {
-                title       = c.name,
-                description = '#' .. c.number,
-                icon        = 'user',
-                onSelect    = function() openContactMenu(c, idx) end,
-            }
-        end
-    end
-
-    -- Add contact
-    options[#options + 1] = {
-        title    = 'Add Contact',
-        icon     = 'user-plus',
-        onSelect = function()
-            local input = lib.inputDialog('Add Contact', {
-                {
-                    type        = 'input',
-                    label       = 'Name',
-                    required    = true,
-                    max         = 24,
-                    placeholder = 'e.g. Dispatch',
-                },
-                {
-                    type        = 'number',
-                    label       = 'Pager Number',
-                    required    = true,
-                    placeholder = '1234',
-                },
-            })
-
-            if not input or not input[1] or not input[2] then return end
-
-            local number = tonumber(input[2])
-            if not number then
-                notify('Invalid pager number.', 'error')
-                return
-            end
-
-            TriggerServerEvent('hbs-pager:server:saveContact', input[1], number)
-        end,
-    }
-
-    lib.registerContext({
-        id      = 'hbs_pager_contacts',
-        title   = 'Contacts',
-        menu    = 'hbs_pager_menu',
-        options = options,
-    })
-    lib.showContext('hbs_pager_contacts')
-end
+RegisterNUICallback('deleteContact', function(data, cb)
+    local index = tonumber(data.index)
+    if not index then cb('invalid') return end
+    TriggerServerEvent('hbs-pager:server:deleteContact', index)
+    cb('ok')
+end)
 
 -- ──────────────────────────────────────────────
--- UI — Inbox
+-- Events from server / ox_inventory
 -- ──────────────────────────────────────────────
 
-local function openInbox()
-    local options = {}
-
-    if #inbox == 0 then
-        options[#options + 1] = {
-            title    = 'No pages received yet.',
-            readOnly = true,
-        }
-    else
-        for _, page in ipairs(inbox) do
-            local p = page
-            options[#options + 1] = {
-                title       = ('[%s] From #%s'):format(p.time, p.sender),
-                description = p.message,
-                icon        = 'envelope',
-                onSelect    = function()
-                    -- Quick actions on a received page
-                    lib.registerContext({
-                        id      = 'hbs_pager_inbox_action',
-                        title   = ('From #%s'):format(p.sender),
-                        menu    = 'hbs_pager_inbox',
-                        options = {
-                            {
-                                title    = 'Reply',
-                                icon     = 'reply',
-                                onSelect = function()
-                                    sendMessageTo(p.sender, nil)
-                                end,
-                            },
-                            {
-                                title    = 'Save to Contacts',
-                                icon     = 'user-plus',
-                                onSelect = function()
-                                    local input = lib.inputDialog('Save Contact', {
-                                        {
-                                            type        = 'input',
-                                            label       = 'Name',
-                                            required    = true,
-                                            max         = 24,
-                                            placeholder = 'e.g. John',
-                                        },
-                                    })
-                                    if not input or not input[1] then return end
-                                    TriggerServerEvent('hbs-pager:server:saveContact', input[1], p.sender)
-                                end,
-                            },
-                        },
-                    })
-                    lib.showContext('hbs_pager_inbox_action')
-                end,
-            }
-        end
-    end
-
-    lib.registerContext({
-        id      = 'hbs_pager_inbox',
-        title   = 'Inbox',
-        menu    = 'hbs_pager_menu',
-        options = options,
-    })
-    lib.showContext('hbs_pager_inbox')
-end
-
--- ──────────────────────────────────────────────
--- UI — Main pager menu
--- ──────────────────────────────────────────────
-
-local function openPagerMenu()
-    lib.registerContext({
-        id      = 'hbs_pager_menu',
-        title   = ('Pager  —  #%s'):format(myPagerNumber),
-        options = {
-            {
-                title       = 'Contacts',
-                description = ('%s saved'):format(#contacts),
-                icon        = 'address-book',
-                onSelect    = function() openContactsMenu() end,
-            },
-            {
-                title       = 'Send Page',
-                description = 'Dial a number manually',
-                icon        = 'paper-plane',
-                onSelect    = function() sendPageDialog() end,
-            },
-            {
-                title       = ('Inbox  (%s)'):format(#inbox),
-                description = 'View pages you have received',
-                icon        = 'inbox',
-                onSelect    = function() openInbox() end,
-            },
-            {
-                title       = ('My Number:  #%s'):format(myPagerNumber),
-                description = 'Share this number so others can page you',
-                icon        = 'hashtag',
-                readOnly    = true,
-            },
-        },
-    })
-    lib.showContext('hbs_pager_menu')
-end
-
--- ──────────────────────────────────────────────
--- Events
--- ──────────────────────────────────────────────
-
--- Fired by ox_inventory when the item is used (client.event in item definition)
+-- Fired by ox_inventory when the pager item is used
 AddEventHandler('hbs-pager:client:openPager', function()
     TriggerServerEvent('hbs-pager:server:registerPager')
 end)
 
--- Server confirms the assigned/existing pager number and sends contacts
+-- Server confirms number + passes saved contacts
 RegisterNetEvent('hbs-pager:client:pagerReady', function(pagerNumber, savedContacts)
     myPagerNumber = pagerNumber
     contacts      = savedContacts or {}
-    openPagerMenu()
+    openPagerUI()
 end)
 
--- Server sends updated contacts after save/delete
+-- Server sends refreshed contacts after save/delete
 RegisterNetEvent('hbs-pager:client:contactsUpdated', function(updatedContacts)
     contacts = updatedContacts or {}
+    SendNUIMessage({ action = 'updateContacts', contacts = contacts })
     notify('Contacts updated.', 'success')
-    openContactsMenu()
 end)
 
+-- Incoming page from another player
 RegisterNetEvent('hbs-pager:client:receivePage', function(senderNumber, message)
-    table.insert(inbox, 1, {
+    local entry = {
         sender  = senderNumber,
         message = message,
-        time    = os.date('%H:%M'),
-    })
+        time    = getTime(),
+    }
+    table.insert(inbox, 1, entry)
+    while #inbox > Config.MaxInboxSize do table.remove(inbox) end
 
-    while #inbox > Config.MaxInboxSize do
-        table.remove(inbox)
-    end
-
+    -- Show NUI popup (non-blocking — no focus change)
     SendNUIMessage({
         action   = 'showPage',
         sender   = senderNumber,
         message  = message,
-        time     = os.date('%H:%M'),
+        time     = entry.time,
         duration = Config.NotificationDuration,
     })
 end)
