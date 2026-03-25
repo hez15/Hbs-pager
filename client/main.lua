@@ -111,9 +111,8 @@ end
 -- ──────────────────────────────────────────────
 
 -- Fired by ox_inventory when the item is used (client.event in item definition)
--- itemData = { slot, name, label, count, metadata, ... }
-AddEventHandler('hbs-pager:client:openPager', function(itemData)
-    TriggerServerEvent('hbs-pager:server:registerPager', itemData.slot)
+AddEventHandler('hbs-pager:client:openPager', function()
+    TriggerServerEvent('hbs-pager:server:registerPager')
 end)
 
 -- Server confirms the assigned/existing pager number

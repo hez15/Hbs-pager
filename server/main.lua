@@ -21,31 +21,43 @@ local function generatePagerNumber()
 end
 
 -- ──────────────────────────────────────────────
--- Register / assign pager number
--- Called by client when item is used.
+-- Assign pager number on first use
 -- Item definition must have: client = { event = 'hbs-pager:client:openPager' }
 -- ──────────────────────────────────────────────
 
-RegisterNetEvent('hbs-pager:server:registerPager', function(slot)
-    local src  = source
-    -- Read metadata directly from inventory — never trust client-sent data
-    local item = exports.ox_inventory:GetSlotWithItem(src, 'pager')
+-- Returns the pager number for a player, assigning one if this is the first use.
+-- Search() returns full slot objects including metadata; GetSlotWithItem only
+-- returns a slot number so we use Search here.
+local function assignPagerNumber(src)
+    local slots = exports.ox_inventory:Search(src, 'slots', 'pager')
 
-    if not item then return end
+    if not slots or #slots == 0 then return nil end
 
+    local item     = slots[1]
     local metadata = item.metadata or {}
 
     if not metadata.pagerNumber then
+        -- First use — generate a unique number and write it to the item permanently
         metadata.pagerNumber = generatePagerNumber()
         exports.ox_inventory:SetMetadata(src, item.slot, metadata)
     else
+        -- Returning user — make sure the number is tracked in usedNumbers
         if not usedNumbers[metadata.pagerNumber] then
             usedNumbers[metadata.pagerNumber] = true
         end
     end
 
-    pagerRegistry[metadata.pagerNumber] = src
-    TriggerClientEvent('hbs-pager:client:pagerReady', src, metadata.pagerNumber)
+    return metadata.pagerNumber
+end
+
+RegisterNetEvent('hbs-pager:server:registerPager', function()
+    local src    = source
+    local number = assignPagerNumber(src)
+
+    if not number then return end
+
+    pagerRegistry[number] = src
+    TriggerClientEvent('hbs-pager:client:pagerReady', src, number)
 end)
 
 -- ──────────────────────────────────────────────
