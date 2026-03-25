@@ -46,6 +46,13 @@ function playPagerBeep() {
   } catch (e) {}
 }
 
+// ── Numeric-only enforcement on pager number inputs ──
+document.querySelectorAll('input[inputmode="numeric"]').forEach(input => {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '');
+  });
+});
+
 // ── Tab switching (hardware buttons) ───────────
 document.querySelectorAll('.hw-btn[data-tab]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -200,10 +207,12 @@ document.getElementById('inbox-reply-btn').addEventListener('click', () => {
 
 document.getElementById('inbox-save-btn').addEventListener('click', () => {
   if (!pendingInboxMsg) return;
-  const name = prompt('Contact name:');
-  if (!name || !name.trim()) return;
-  nuiCallback('saveContact', { name: name.trim(), number: pendingInboxMsg.sender });
-  hideAllOverlays();
+  // Reuse the add-contact overlay with the sender's number pre-filled
+  document.getElementById('new-contact-name').value   = '';
+  document.getElementById('new-contact-number').value = pendingInboxMsg.sender;
+  document.getElementById('inbox-action-overlay').classList.add('hidden');
+  document.getElementById('add-contact-overlay').classList.remove('hidden');
+  document.getElementById('new-contact-name').focus();
 });
 
 document.getElementById('inbox-back-btn').addEventListener('click', hideAllOverlays);
