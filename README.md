@@ -40,10 +40,15 @@ Open `ox_inventory/data/items.lua` and add the following inside the return table
     stack       = false,
     close       = true,
     description = 'A small paging device. Use it to send and receive pages.',
+    server = {
+        export = 'hbs-pager.usePager',
+    },
 },
 ```
 
 > `stack = false` is required — each pager must be a unique inventory slot so metadata (the pager number) is stored per item.
+>
+> `server.export` is required — without it ox_inventory will not show a "Use" option for the item.
 
 ### 2. Add a pager image *(optional)*
 

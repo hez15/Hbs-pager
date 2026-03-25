@@ -20,20 +20,12 @@ local function generatePagerNumber()
     return num
 end
 
-local function getPlayerPagerNumber(src)
-    for number, s in pairs(pagerRegistry) do
-        if s == src then return number end
-    end
-    return nil
-end
-
 -- ──────────────────────────────────────────────
--- ox_inventory item hook
+-- ox_inventory item export (replaces registerHook)
+-- Item definition must have: server = { export = 'hbs-pager.usePager' }
 -- ──────────────────────────────────────────────
 
-exports.ox_inventory:registerHook('usingItem', function(payload)
-    if payload.item.name ~= 'pager' then return end
-
+exports('usePager', function(payload, cb)
     local src      = payload.source
     local metadata = payload.item.metadata or {}
 
@@ -53,7 +45,7 @@ exports.ox_inventory:registerHook('usingItem', function(payload)
 
     TriggerClientEvent('hbs-pager:client:openPager', src, metadata.pagerNumber)
 
-    return false -- prevent item from being consumed
+    cb(true) -- required: signals ox_inventory the use action completed
 end)
 
 -- ──────────────────────────────────────────────
