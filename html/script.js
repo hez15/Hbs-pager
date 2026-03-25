@@ -200,10 +200,12 @@ document.getElementById('inbox-reply-btn').addEventListener('click', () => {
 
 document.getElementById('inbox-save-btn').addEventListener('click', () => {
   if (!pendingInboxMsg) return;
-  const name = prompt('Contact name:');
-  if (!name || !name.trim()) return;
-  nuiCallback('saveContact', { name: name.trim(), number: pendingInboxMsg.sender });
-  hideAllOverlays();
+  // Reuse the add-contact overlay with the sender's number pre-filled
+  document.getElementById('new-contact-name').value   = '';
+  document.getElementById('new-contact-number').value = pendingInboxMsg.sender;
+  document.getElementById('inbox-action-overlay').classList.add('hidden');
+  document.getElementById('add-contact-overlay').classList.remove('hidden');
+  document.getElementById('new-contact-name').focus();
 });
 
 document.getElementById('inbox-back-btn').addEventListener('click', hideAllOverlays);
