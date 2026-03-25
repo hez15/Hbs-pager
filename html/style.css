@@ -1,0 +1,92 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: transparent;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* ── Popup container ─────────────────────────── */
+#pager-popup {
+  position: fixed;
+  bottom: 80px;
+  left: 30px;
+  width: 300px;
+  background: #111111;
+  border: 2px solid #00ff88;
+  border-radius: 8px;
+  color: #00ff88;
+  padding: 14px 18px;
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.25);
+  animation: slideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 9999;
+}
+
+#pager-popup.hidden {
+  display: none;
+}
+
+/* ── Header ──────────────────────────────────── */
+.pager-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(0, 255, 136, 0.25);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.pager-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ── Body ────────────────────────────────────── */
+.pager-body {
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* ── Footer ──────────────────────────────────── */
+.pager-footer {
+  font-size: 10px;
+  opacity: 0.45;
+  margin-top: 10px;
+  text-align: right;
+  letter-spacing: 1px;
+}
+
+/* ── Animations ──────────────────────────────── */
+@keyframes slideIn {
+  from {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+}
+
+#pager-popup.slide-out {
+  animation: slideOut 0.3s ease forwards;
+}
